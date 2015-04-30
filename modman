@@ -1,2 +1,4 @@
 Juicy                              app/code/local/Juicy
+Data							   lib/Juicy/Geoip/Data
+geoip.inc 	 					   lib/Juicy/Geoip/geoip.inc
 Juicy_Geoip.xml                    app/etc/modules/Juicy_Geoip.xml

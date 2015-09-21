@@ -16,16 +16,34 @@ class Juicy_Geoip_Model_Geoip
         } else {
             Mage::getSingleton('core/session')->setCountryCode($countryCode);
         }
+		
         $pairArr = $this->_getPairArray();
         foreach($pairArr as $searchArr){
             if(in_array($countryCode, $searchArr)){
-                $this->_setCurrency($searchArr);
+                $matched = $searchArr;
                 //This method returns the redirect for store if it needs one  
                 //@TODO Make this a bit nicer
-                return $this->_setStore($searchArr);
+                break;
             }
         }
+		
+		/*
+		 * Webcode.bg
+		 * If currency not found set default currency for default store.
+		 */
+		if(!isset($matched)) {
+			$defaultStoreId = Mage::app()->getWebsite()->getDefaultGroup()->getDefaultStoreId();
+			$matched = array(
+				'countryCode'  => $countryCode,
+				'currencyCode' => Mage::getStoreConfig('currency/options/default'),
+				'store' => $defaultStoreId
+			);
+		}
+		
+		$this->_setCurrency($matched);
+		return $this->_setStore($matched);
     }
+	
     protected function _setCurrency($searchArr)
     {
         if(Mage::helper('geoip')->canSwitch("currency")){

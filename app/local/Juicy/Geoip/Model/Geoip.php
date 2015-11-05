@@ -13,10 +13,7 @@ class Juicy_Geoip_Model_Geoip
         $countryCode = $this->_getCountryCode();
         if(empty($countryCode)){
             Mage::log("Country code returned empty. Please ensure you have at least one GeoIP method installed/enabled", null, "juicy_geoip.log");
-        } else {
-            Mage::getSingleton('core/session')->setCountryCode($countryCode);
         }
-		
         $pairArr = $this->_getPairArray();
         foreach($pairArr as $searchArr){
             if(in_array($countryCode, $searchArr)){
@@ -27,10 +24,6 @@ class Juicy_Geoip_Model_Geoip
             }
         }
 		
-		/*
-		 * Webcode.bg
-		 * If currency not found set default currency for default store.
-		 */
 		if(!isset($matched)) {
 			$defaultStoreId = Mage::app()->getWebsite()->getDefaultGroup()->getDefaultStoreId();
 			$matched = array(
@@ -43,7 +36,6 @@ class Juicy_Geoip_Model_Geoip
 		$this->_setCurrency($matched);
 		return $this->_setStore($matched);
     }
-	
     protected function _setCurrency($searchArr)
     {
         if(Mage::helper('geoip')->canSwitch("currency")){
@@ -53,9 +45,9 @@ class Juicy_Geoip_Model_Geoip
     protected function _setStore($searchArr)
     {
         if(Mage::helper('geoip')->canSwitch("store")){
-            $storeName = Mage::app()->getStore($searchArr['store'])->getName();
-            if ($storeName) {
-                $store = Mage::getModel('core/store')->load($storeName, 'name');
+            $storeCode = Mage::app()->getStore($searchArr['store'])->getCode();
+            if ($storeCode) {
+                $store = Mage::getModel('core/store')->load($storeCode);
                 if ($store->getName() != Mage::app()->getStore()->getName()) {
                     //Needs to return store URL for observer to redirect using event
                     return $store->getCurrentUrl(false);
@@ -65,14 +57,13 @@ class Juicy_Geoip_Model_Geoip
     }
     protected function _getCountryCode()
     {
-        if(Mage::helper('geoip')->isTestMode()){
+        if(Mage::helper('geoip')->enableTestMode()){
             $overrideCountry = Mage::helper('geoip')->testOverrideCountry();
             if(!empty($overrideCountry)){
-                return Mage::helper('geoip')->testOverrideCountry();
+                return $overrideCountry;
             }
         }            
         return $this->_getCountryCodeFromIp($this->_getIp());
-        //return $this->_getCountryCodeFromIp("0.1120");
     }
     protected function _getPairArray()
     {
@@ -81,6 +72,7 @@ class Juicy_Geoip_Model_Geoip
     
     protected function _getIp(){
         //Using Mage HTTP helper because Varnish can confuse PHP method
+        Mage::helper('geoip')->switchRemoteHeaders();
         return Mage::helper('core/http')->getRemoteAddr();
     }
     
